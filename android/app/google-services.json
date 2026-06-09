@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "846720631725",
+    "project_id": "eventlyfe-e3d89",
+    "storage_bucket": "eventlyfe-e3d89.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:846720631725:android:d0ccacf81ce82264bc1724",
+        "android_client_info": {
+          "package_name": "com.example.pemesanan_tiket"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCB7hKtmfxIAWt5Y6yHnzoD4m6FYj7-mLk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:846720631725:android:d67d39571c41c0aabc1724",
+        "android_client_info": {
+          "package_name": "com.nafis.eventlyfe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCB7hKtmfxIAWt5Y6yHnzoD4m6FYj7-mLk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
