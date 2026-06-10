@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/providers/event_provider.dart';
 import '../../core/providers/auth_provider.dart';
+// import '../../core/providers/category_provider.dart'; // Import ini
 import '../../core/utils/currency_formatter.dart';
 
 import '../auth/login_page.dart';
@@ -20,14 +21,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-
-    // Mengambil data dari API saat halaman pertama kali dibuka
     Future.microtask(() {
       context.read<EventProvider>().fetchEvents();
     });
   }
 
-  // Fungsi untuk fitur Pull-to-Refresh
   Future<void> _onRefresh() async {
     await context.read<EventProvider>().fetchEvents();
   }
@@ -40,44 +38,33 @@ class _HomePageState extends State<HomePage> {
 
     final auth = context.watch<AuthProvider>();
     final isLoggedIn = auth.isLoggedIn;
-    final user = auth.user; // Berbentuk Map<String, dynamic> sekarang
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(
+        0xFF121212,
+      ), // Disamakan dengan base background web
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _onRefresh,
-          color: Colors.blue,
+          color: const Color(0xFF1877F2),
           backgroundColor: const Color(0xFF1A1A1A),
           child: CustomScrollView(
             slivers: [
-              // 🔥 HEADER
+              // 🔥 1. HEADER / NAVBAR (Logo EventLyfe)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // Logo EventLyfe (Adaptasi teks 2 warna ala Web)
+                      Row(
                         children: [
-                          Text(
-                            isLoggedIn && user != null
-                                ? 'Halo, ${user['username'] ?? 'User'}' // Menggunakan username dari Laravel
-                                : 'Discover',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Temukan Event',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                          Image.asset(
+                            'assets/images/logo.png', // Sesuaikan nama filenya
+                            height:
+                                35, // Atur tinggi logo agar pas dengan AppBar
+                            fit: BoxFit.contain,
                           ),
                         ],
                       ),
@@ -90,97 +77,35 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              // 🔥 LOGIN CTA (JIKA BELUM LOGIN)
-              if (!isLoggedIn)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF1E3A5F), Color(0xFF0D1B2A)],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.confirmation_number,
-                              color: Colors.blue,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Masuk untuk beli tiket',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Nikmati pengalaman pemesanan terbaik',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => _navigateTo(const LoginPage()),
-                            child: const Text('Masuk'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+              // 🔥 2. HERO SEARCH SECTION (Solid Dark Grey ala Web)
+              SliverToBoxAdapter(child: _buildHeroSearch()),
 
-              // 🔥 LOADING INDICATOR (Jika data sedang di-fetch)
+              // 🔥 3. JELAJAHI KATEGORI
+              SliverToBoxAdapter(child: _buildCategories()),
+
+              // 🔥 LOADING INDICATOR
               if (isLoading && events.isEmpty)
                 const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.only(top: 40),
                     child: Center(
-                      child: CircularProgressIndicator(color: Colors.blue),
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF1877F2),
+                      ),
                     ),
                   ),
                 ),
 
-              // 🔥 HERO BANNER
-              if (!isLoading && events.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _heroBanner(events.first),
-                  ),
-                ),
-
-              // 🔥 SECTION TITLE
+              // 🔥 4. SECTION TITLE: EVENT PILIHAN
               if (!isLoading || events.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                    padding: const EdgeInsets.fromLTRB(20, 30, 20, 12),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Event Populer',
+                          'Event Pilihan',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -189,17 +114,14 @@ class _HomePageState extends State<HomePage> {
                         ),
                         Text(
                           'Lihat Semua',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.blue.shade400,
-                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.white70),
                         ),
                       ],
                     ),
                   ),
                 ),
 
-              // 🔥 HORIZONTAL LIST
+              // 🔥 5. HORIZONTAL LIST (Event Pilihan)
               if (!isLoading)
                 SliverToBoxAdapter(
                   child: events.isEmpty
@@ -219,23 +141,22 @@ class _HomePageState extends State<HomePage> {
                             scrollDirection: Axis.horizontal,
                             itemCount: events.length,
                             itemBuilder: (context, index) {
-                              final event = events[index];
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12),
-                                child: _eventCard(context, event),
+                                child: _eventCard(context, events[index]),
                               );
                             },
                           ),
                         ),
                 ),
 
-              // 🔥 RECOMMENDED SECTION
+              // 🔥 6. RECOMMENDED SECTION
               if (!isLoading && events.isNotEmpty)
                 const SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
+                    padding: EdgeInsets.fromLTRB(20, 30, 20, 12),
                     child: Text(
-                      'Rekomendasi Untukmu',
+                      'Rekomendasi Lainnya',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -245,7 +166,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
 
-              // 🔥 VERTICAL LIST
+              // 🔥 7. VERTICAL LIST
               if (!isLoading && events.isNotEmpty)
                 SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
@@ -253,14 +174,14 @@ class _HomePageState extends State<HomePage> {
                     return Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
-                        vertical: 4,
+                        vertical: 6,
                       ),
                       child: _listTile(context, events[index]),
                     );
                   }, childCount: events.length),
                 ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+              const SliverToBoxAdapter(child: SizedBox(height: 30)),
             ],
           ),
         ),
@@ -268,15 +189,245 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildLoginButton() {
+  // =========================================================================
+  // WIDGET COMPONENTS
+  // =========================================================================
+
+  // 🔹 HERO SEARCH BANNER
+  Widget _buildHeroSearch() {
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(
+          0xFF1A1A1A,
+        ), // Mengikuti base dark grey dari web search box
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
-      child: IconButton(
-        icon: const Icon(Icons.login, color: Colors.blue),
-        onPressed: () => _navigateTo(const LoginPage()),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Temukan pengalaman\ntak terlupakan!',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Search Field
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF121212),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: const TextField(
+              style: TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Konser, Webinar, dll...',
+                hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+                border: InputBorder.none,
+                icon: Icon(Icons.search, color: Colors.grey, size: 20),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Location & Date
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF121212),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        color: Colors.grey,
+                        size: 18,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Semua Lokasi',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF121212),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        color: Colors.grey,
+                        size: 18,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Pilih Waktu',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Cari Button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(
+                  0xFF1877F2,
+                ), // Warna biru solid web
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {},
+              child: const Text(
+                'Cari Event',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔹 JELAJAHI KATEGORI
+  Widget _buildCategories() {
+    final categories = [
+      {'icon': Icons.music_note, 'title': 'Musik', 'color': Colors.amber},
+      {'icon': Icons.work_outline, 'title': 'Workshop', 'color': Colors.blue},
+      {
+        'icon': Icons.sports_esports,
+        'title': 'Game',
+        'color': Colors.redAccent,
+      },
+      {'icon': Icons.palette_outlined, 'title': 'Hobi', 'color': Colors.green},
+      {
+        'icon': Icons.festival_outlined,
+        'title': 'Festival',
+        'color': Colors.cyan,
+      },
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Jelajahi Kategori',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 90,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final cat = categories[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Column(
+                    children: [
+                      Container(
+                        height: 55,
+                        width: 55,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF1A1A1A),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.05),
+                          ),
+                        ),
+                        child: Icon(
+                          cat['icon'] as IconData,
+                          color: cat['color'] as Color,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        cat['title'] as String,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔹 AUTH BUTTONS
+  Widget _buildLoginButton() {
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: Color(0xFF1877F2), width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      ),
+      onPressed: () => _navigateTo(const LoginPage()),
+      child: const Text(
+        'Masuk',
+        style: TextStyle(color: Color(0xFF1877F2), fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -287,9 +438,7 @@ class _HomePageState extends State<HomePage> {
 
     return PopupMenuButton<String>(
       onSelected: (value) async {
-        if (value == 'logout') {
-          await auth.logout();
-        }
+        if (value == 'logout') await auth.logout();
       },
       offset: const Offset(0, 50),
       color: const Color(0xFF1E1E1E),
@@ -301,7 +450,7 @@ class _HomePageState extends State<HomePage> {
             children: [
               const CircleAvatar(
                 radius: 16,
-                backgroundColor: Colors.blue,
+                backgroundColor: Color(0xFF1877F2),
                 child: Icon(Icons.person, size: 18, color: Colors.white),
               ),
               const SizedBox(width: 12),
@@ -328,8 +477,9 @@ class _HomePageState extends State<HomePage> {
         ),
       ],
       child: const CircleAvatar(
-        backgroundColor: Colors.blue,
-        child: Icon(Icons.person, color: Colors.white),
+        radius: 18,
+        backgroundColor: Color(0xFF1877F2),
+        child: Icon(Icons.person, color: Colors.white, size: 20),
       ),
     );
   }
@@ -338,73 +488,7 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
-  Widget _heroBanner(event) {
-    return GestureDetector(
-      onTap: () => _navigateTo(EventDetailPage(event: event)),
-      child: Container(
-        height: 180,
-        margin: const EdgeInsets.only(top: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          image: DecorationImage(
-            image: event.image.isNotEmpty
-                ? NetworkImage(event.image)
-                : const AssetImage('assets/placeholder.png') as ImageProvider,
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              colors: [Colors.black.withOpacity(0.8), Colors.transparent],
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-            ),
-          ),
-          padding: const EdgeInsets.all(16),
-          alignment: Alignment.bottomLeft,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'FEATURED',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                event.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                CurrencyFormatter.format(event.price),
-                style: const TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
+  // 🔹 CARD EVENT HORIZONTAL
   Widget _eventCard(BuildContext context, event) {
     return GestureDetector(
       onTap: () => _navigateTo(EventDetailPage(event: event)),
@@ -413,6 +497,7 @@ class _HomePageState extends State<HomePage> {
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,8 +510,7 @@ class _HomePageState extends State<HomePage> {
                   ? CachedNetworkImage(
                       imageUrl: event.image,
                       width: double.infinity,
-                      height:
-                          100, // (Sesuaikan tingginya dengan komponen _eventCard atau _listTile kamu)
+                      height: 110,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Container(
                         color: Colors.grey[900],
@@ -443,7 +527,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     )
                   : Container(
-                      height: 100,
+                      height: 110,
                       color: Colors.grey[800],
                       child: const Icon(Icons.image, color: Colors.grey),
                     ),
@@ -455,18 +539,19 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Text(
                     event.title,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: 13,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     CurrencyFormatter.format(event.price),
                     style: const TextStyle(
-                      color: Colors.green,
+                      color: Colors.greenAccent,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -480,6 +565,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // 🔹 LIST TILE VERTIKAL
   Widget _listTile(BuildContext context, event) {
     return GestureDetector(
       onTap: () => _navigateTo(EventDetailPage(event: event)),
@@ -488,41 +574,63 @@ class _HomePageState extends State<HomePage> {
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
         child: Row(
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: event.image.isNotEmpty
-                  ? Image.network(
-                      event.image,
-                      width: 60,
-                      height: 60,
+                  ? CachedNetworkImage(
+                      imageUrl: event.image,
+                      width: 70,
+                      height: 70,
                       fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        width: 70,
+                        height: 70,
+                        color: Colors.grey[900],
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        width: 70,
+                        height: 70,
+                        color: Colors.grey[800],
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: Colors.grey,
+                        ),
+                      ),
                     )
                   : Container(
-                      width: 60,
-                      height: 60,
+                      width: 70,
+                      height: 70,
                       color: Colors.grey[800],
                       child: const Icon(Icons.image, color: Colors.grey),
                     ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     event.title,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     CurrencyFormatter.format(event.price),
                     style: const TextStyle(
-                      color: Colors.green,
+                      color: Colors.greenAccent,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
