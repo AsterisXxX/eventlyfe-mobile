@@ -6,21 +6,16 @@ import '../../core/utils/currency_formatter.dart';
 class EventDetailPage extends StatelessWidget {
   final Event event;
 
-  const EventDetailPage({
-    super.key,
-    required this.event,
-  });
+  const EventDetailPage({super.key, required this.event});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D0D),
-      // 🔥 bottom CTA (sticky)
       bottomNavigationBar: _bottomBar(context),
 
       body: CustomScrollView(
         slivers: [
-          // 🔥 HERO HEADER
           SliverAppBar(
             expandedHeight: 240,
             pinned: true,
@@ -40,12 +35,8 @@ class EventDetailPage extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // 🖼️ IMAGE
                   event.image.isNotEmpty
-                      ? Image.network(
-                          event.image,
-                          fit: BoxFit.cover,
-                        )
+                      ? Image.network(event.image, fit: BoxFit.cover)
                       : Container(
                           color: Colors.grey[800],
                           child: const Icon(
@@ -55,7 +46,6 @@ class EventDetailPage extends StatelessWidget {
                           ),
                         ),
 
-                  // 🔥 gradient overlay
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -76,14 +66,12 @@ class EventDetailPage extends StatelessWidget {
             ),
           ),
 
-          // 🔥 CONTENT
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 💰 PRICE
                   Text(
                     CurrencyFormatter.format(event.price),
                     style: const TextStyle(
@@ -95,7 +83,6 @@ class EventDetailPage extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  // 📌 TITLE
                   Text(
                     event.title,
                     style: const TextStyle(
@@ -107,7 +94,6 @@ class EventDetailPage extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  // 📍 INFO CARD
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -133,7 +119,6 @@ class EventDetailPage extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  // 📝 DESCRIPTION
                   const Text(
                     'Deskripsi Event',
                     style: TextStyle(
@@ -149,10 +134,7 @@ class EventDetailPage extends StatelessWidget {
                     'Ini adalah deskripsi singkat tentang event yang akan diadakan. '
                     'Event ini akan menghadirkan pengalaman yang menarik dan seru bagi peserta. '
                     'Jangan lewatkan kesempatan ini untuk menikmati berbagai hiburan menarik!',
-                    style: TextStyle(
-                      height: 1.6,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(height: 1.6, color: Colors.grey),
                   ),
 
                   const SizedBox(height: 80), // space buat bottom button
@@ -190,10 +172,7 @@ class EventDetailPage extends StatelessWidget {
               ),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -202,7 +181,6 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
-  // 🔥 BOTTOM BAR (CTA)
   Widget _bottomBar(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -219,7 +197,6 @@ class EventDetailPage extends StatelessWidget {
       child: SafeArea(
         child: Row(
           children: [
-            // 💰 PRICE MINI
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,10 +204,7 @@ class EventDetailPage extends StatelessWidget {
                 children: [
                   const Text(
                     'Total Harga',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                   Text(
                     CurrencyFormatter.format(event.price),
@@ -244,7 +218,6 @@ class EventDetailPage extends StatelessWidget {
               ),
             ),
 
-            // 🔘 BUTTON
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
@@ -259,9 +232,7 @@ class EventDetailPage extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => BookingPage(event: event),
-                  ),
+                  MaterialPageRoute(builder: (_) => BookingPage(event: event)),
                 );
               },
               child: const Row(
@@ -271,9 +242,7 @@ class EventDetailPage extends StatelessWidget {
                   SizedBox(width: 8),
                   Text(
                     'Beli Tiket',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),

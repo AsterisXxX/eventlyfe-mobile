@@ -28,8 +28,9 @@ class _EditEventPageState extends State<EditEventPage> {
   void initState() {
     super.initState();
     titleController = TextEditingController(text: widget.event.title);
-    priceController =
-        TextEditingController(text: widget.event.price.toString());
+    priceController = TextEditingController(
+      text: widget.event.price.toString(),
+    );
   }
 
   Future<void> pickImage() async {
@@ -43,9 +44,9 @@ class _EditEventPageState extends State<EditEventPage> {
   }
 
   Future<String> uploadImage(File file) async {
-    final ref = FirebaseStorage.instance
-        .ref()
-        .child('events/${DateTime.now().millisecondsSinceEpoch}.jpg');
+    final ref = FirebaseStorage.instance.ref().child(
+      'events/${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
 
     await ref.putFile(file);
     return await ref.getDownloadURL();
@@ -56,9 +57,9 @@ class _EditEventPageState extends State<EditEventPage> {
     final price = int.tryParse(priceController.text.trim()) ?? 0;
 
     if (title.isEmpty || price <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data tidak valid')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Data tidak valid')));
       return;
     }
 
@@ -74,23 +75,19 @@ class _EditEventPageState extends State<EditEventPage> {
       await FirebaseFirestore.instance
           .collection('events')
           .doc(widget.event.id)
-          .update({
-        'title': title,
-        'price': price,
-        'image': imageUrl,
-      });
+          .update({'title': title, 'price': price, 'image': imageUrl});
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Event berhasil diupdate')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Event berhasil diupdate')));
 
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
@@ -135,8 +132,8 @@ class _EditEventPageState extends State<EditEventPage> {
                 child: imageFile != null
                     ? Image.file(imageFile!, fit: BoxFit.cover)
                     : widget.event.image.isNotEmpty
-                        ? Image.network(widget.event.image, fit: BoxFit.cover)
-                        : const Center(child: Text('Pilih Gambar')),
+                    ? Image.network(widget.event.image, fit: BoxFit.cover)
+                    : const Center(child: Text('Pilih Gambar')),
               ),
             ),
 
@@ -149,11 +146,8 @@ class _EditEventPageState extends State<EditEventPage> {
 
             const SizedBox(height: 10),
 
-            // 🔴 DELETE BUTTON
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: deleteEvent,
               child: const Text('Hapus Event'),
             ),

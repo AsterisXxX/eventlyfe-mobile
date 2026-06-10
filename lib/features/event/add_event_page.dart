@@ -8,7 +8,7 @@ class AddEventPage extends StatefulWidget {
   const AddEventPage({super.key});
 
   @override
- State<AddEventPage> createState() => _AddEventPageState();
+  State<AddEventPage> createState() => _AddEventPageState();
 }
 
 class _AddEventPageState extends State<AddEventPage> {
@@ -19,8 +19,6 @@ class _AddEventPageState extends State<AddEventPage> {
   bool isLoading = false;
 
   final picker = ImagePicker();
-
-  // 📸 PILIH GAMBAR
   Future<void> pickImage() async {
     final picked = await picker.pickImage(source: ImageSource.gallery);
 
@@ -31,28 +29,23 @@ class _AddEventPageState extends State<AddEventPage> {
     }
   }
 
-  // ☁️ UPLOAD IMAGE (FIREBASE STORAGE)
   Future<String> uploadImage(File file) async {
-    final ref = FirebaseStorage.instance
-        .ref()
-        .child('events/${DateTime.now().millisecondsSinceEpoch}.jpg');
+    final ref = FirebaseStorage.instance.ref().child(
+      'events/${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
 
     await ref.putFile(file);
 
     return await ref.getDownloadURL();
   }
 
-  // 💾 SAVE EVENT (FINAL FIXED)
   Future<void> saveEvent() async {
     final title = titleController.text.trim();
     final price = int.tryParse(priceController.text.trim()) ?? 0;
 
-    // 🔐 VALIDASI
     if (title.isEmpty || price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nama event dan harga wajib diisi'),
-        ),
+        const SnackBar(content: Text('Nama event dan harga wajib diisi')),
       );
       return;
     }
@@ -62,12 +55,10 @@ class _AddEventPageState extends State<AddEventPage> {
     try {
       String imageUrl = '';
 
-      // 🖼️ OPTIONAL IMAGE
       if (imageFile != null) {
         imageUrl = await uploadImage(imageFile!);
       }
 
-      // 💾 SIMPAN KE FIRESTORE
       await FirebaseFirestore.instance.collection('events').add({
         'title': title,
         'price': price,
@@ -78,20 +69,16 @@ class _AddEventPageState extends State<AddEventPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Event berhasil ditambahkan'),
-        ),
+        const SnackBar(content: Text('Event berhasil ditambahkan')),
       );
 
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -114,7 +101,6 @@ class _AddEventPageState extends State<AddEventPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // 📧 TITLE
             TextField(
               controller: titleController,
               decoration: const InputDecoration(labelText: 'Nama Event'),
@@ -122,7 +108,6 @@ class _AddEventPageState extends State<AddEventPage> {
 
             const SizedBox(height: 10),
 
-            // 💰 PRICE
             TextField(
               controller: priceController,
               keyboardType: TextInputType.number,
@@ -131,7 +116,6 @@ class _AddEventPageState extends State<AddEventPage> {
 
             const SizedBox(height: 20),
 
-            // 🖼️ IMAGE PICKER (OPTIONAL)
             GestureDetector(
               onTap: pickImage,
               child: Container(
@@ -150,15 +134,12 @@ class _AddEventPageState extends State<AddEventPage> {
                           width: double.infinity,
                         ),
                       )
-                    : const Center(
-                        child: Text('Pilih Gambar (Opsional)'),
-                      ),
+                    : const Center(child: Text('Pilih Gambar (Opsional)')),
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // 🔘 BUTTON
             SizedBox(
               width: double.infinity,
               height: 50,

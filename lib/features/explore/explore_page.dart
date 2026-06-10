@@ -19,8 +19,7 @@ class _ExplorePageState extends State<ExplorePage> {
 
   List<Event> applyFilter(List<Event> events) {
     List<Event> filtered = events
-        .where((e) =>
-            e.title.toLowerCase().contains(searchQuery.toLowerCase()))
+        .where((e) => e.title.toLowerCase().contains(searchQuery.toLowerCase()))
         .toList();
 
     if (selectedFilter == 'low') {
@@ -69,8 +68,6 @@ class _ExplorePageState extends State<ExplorePage> {
             ),
 
             const SizedBox(height: 16),
-
-            // 🔍 SEARCH
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: TextField(
@@ -93,8 +90,6 @@ class _ExplorePageState extends State<ExplorePage> {
             ),
 
             const SizedBox(height: 12),
-
-            // 🔥 FILTER CHIP
             SizedBox(
               height: 40,
               child: ListView(
@@ -109,8 +104,6 @@ class _ExplorePageState extends State<ExplorePage> {
             ),
 
             const SizedBox(height: 10),
-
-            // 📦 GRID
             Expanded(
               child: filteredEvents.isEmpty
                   ? const Center(
@@ -124,11 +117,11 @@ class _ExplorePageState extends State<ExplorePage> {
                       itemCount: filteredEvents.length,
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.72,
-                      ),
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 0.72,
+                          ),
                       itemBuilder: (context, index) {
                         final event = filteredEvents[index];
                         return _eventCard(context, event);
@@ -141,7 +134,6 @@ class _ExplorePageState extends State<ExplorePage> {
     );
   }
 
-  // 🔥 FILTER CHIP
   Widget _filterChip(String label, String value) {
     final isSelected = selectedFilter == value;
 
@@ -165,15 +157,12 @@ class _ExplorePageState extends State<ExplorePage> {
     );
   }
 
-  // 🔥 CARD MODERN
   Widget _eventCard(BuildContext context, Event event) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => EventDetailPage(event: event),
-          ),
+          MaterialPageRoute(builder: (_) => EventDetailPage(event: event)),
         );
       },
       child: Container(
@@ -230,11 +219,10 @@ class _ExplorePageState extends State<ExplorePage> {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 }
-    

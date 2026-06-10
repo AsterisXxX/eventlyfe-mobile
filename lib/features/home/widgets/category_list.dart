@@ -1,82 +1,114 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/providers/category_provider.dart';
 
-import '../../../core/providers/category_provider.dart'; // Sesuaikan path importnya
-
-class CategoryList extends StatefulWidget {
+class CategoryList extends StatelessWidget {
   const CategoryList({super.key});
 
   @override
-  State<CategoryList> createState() => _CategoryListState();
-}
-
-class _CategoryListState extends State<CategoryList> {
-  @override
-  void initState() {
-    super.initState();
-    // Tarik data dari API Laravel saat widget pertama kali dirender
-    Future.microtask(() {
-      context.read<CategoryProvider>().fetchCategories();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // Pantau perubahan data dari provider
+    // Pantau data dari CategoryProvider
     final categoryProvider = context.watch<CategoryProvider>();
     final categories = categoryProvider.categories;
     final isLoading = categoryProvider.isLoading;
 
-    // Jika sedang loading, tampilkan indikator loading
-    if (isLoading && categories.isEmpty) {
-      return const SizedBox(
-        height: 40,
-        child: Center(
-          child: SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(
-              color: Colors.blue,
-              strokeWidth: 2,
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Jika tidak ada data dari database
-    if (categories.isEmpty) {
-      return const SizedBox();
-    }
-
-    return SizedBox(
-      height: 40,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          // Asumsi field nama kategori di database Laravel adalah 'name'
-          final categoryName = categories[index]['name'] ?? 'Unknown';
-
-          return Container(
-            margin: const EdgeInsets.only(right: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: const Color(
-                0xFF1877F2,
-              ), // Warna biru disamakan dengan tema web
-              borderRadius: BorderRadius.circular(20),
-            ),
-            alignment: Alignment.center,
+    return Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              categoryName,
-              style: const TextStyle(
+              'Jelajahi Kategori',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
                 color: Colors.white,
-                fontWeight: FontWeight.w500,
               ),
             ),
-          );
-        },
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 90,
+            child: isLoading && categories.isEmpty
+                ? const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF1877F2)),
+                  )
+                : categories.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Kategori kosong',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final catName = categories[index]['name'] ?? 'Kategori';
+
+                      // 🔥 LOGIKA PEMETAAN ICON & WARNA DINAMIS
+                      IconData iconData = Icons.label_important;
+                      Color iconColor = Colors.grey;
+
+                      final nameLower = catName.toString().toLowerCase();
+
+                      if (nameLower.contains('musik')) {
+                        iconData = Icons.music_note;
+                        iconColor = Colors.amber;
+                      } else if (nameLower.contains('workshop') ||
+                          nameLower.contains('seminar')) {
+                        iconData = Icons.work_outline;
+                        iconColor = Colors.blue;
+                      } else if (nameLower.contains('game') ||
+                          nameLower.contains('esport')) {
+                        iconData = Icons.sports_esports;
+                        iconColor = Colors.redAccent;
+                      } else if (nameLower.contains('hobi')) {
+                        iconData = Icons.palette_outlined;
+                        iconColor = Colors.green;
+                      } else if (nameLower.contains('festival')) {
+                        iconData = Icons.festival_outlined;
+                        iconColor = Colors.cyan;
+                      } else {
+                        iconData = Icons.explore;
+                        iconColor = Colors.orange;
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Column(
+                          children: [
+                            Container(
+                              height: 55,
+                              width: 55,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFF1A1A1A),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.05),
+                                ),
+                              ),
+                              child: Icon(iconData, color: iconColor, size: 24),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              catName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
