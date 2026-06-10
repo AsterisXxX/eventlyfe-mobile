@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/providers/event_provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/utils/currency_formatter.dart';
 
 import '../auth/login_page.dart';
-// import '../auth/register_page.dart';
 import '../event/event_detail_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -21,216 +21,248 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
+    // Mengambil data dari API saat halaman pertama kali dibuka
     Future.microtask(() {
-      context.read<EventProvider>().listenEvents();
+      context.read<EventProvider>().fetchEvents();
     });
+  }
+
+  // Fungsi untuk fitur Pull-to-Refresh
+  Future<void> _onRefresh() async {
+    await context.read<EventProvider>().fetchEvents();
   }
 
   @override
   Widget build(BuildContext context) {
-    final events = context.watch<EventProvider>().events;
+    final eventProvider = context.watch<EventProvider>();
+    final events = eventProvider.events;
+    final isLoading = eventProvider.isLoading;
+
     final auth = context.watch<AuthProvider>();
-    final user = auth.user;
+    final isLoggedIn = auth.isLoggedIn;
+    final user = auth.user; // Berbentuk Map<String, dynamic> sekarang
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D0D),
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // 🔥 HEADER
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user != null
-                              ? 'Halo, ${user.email?.split('@').first}'
-                              : 'Discover',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: Colors.blue,
+          backgroundColor: const Color(0xFF1A1A1A),
+          child: CustomScrollView(
+            slivers: [
+              // 🔥 HEADER
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isLoggedIn && user != null
+                                ? 'Halo, ${user['username'] ?? 'User'}' // Menggunakan username dari Laravel
+                                : 'Discover',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
                           ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Temukan Event',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // 🔐 AUTH BUTTON
+                      !isLoggedIn
+                          ? _buildLoginButton()
+                          : _buildUserAvatar(auth),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 🔥 LOGIN CTA (JIKA BELUM LOGIN)
+              if (!isLoggedIn)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1E3A5F), Color(0xFF0D1B2A)],
                         ),
-                        const SizedBox(height: 4),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.confirmation_number,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Masuk untuk beli tiket',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Nikmati pengalaman pemesanan terbaik',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => _navigateTo(const LoginPage()),
+                            child: const Text('Masuk'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+              // 🔥 LOADING INDICATOR (Jika data sedang di-fetch)
+              if (isLoading && events.isEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 40),
+                    child: Center(
+                      child: CircularProgressIndicator(color: Colors.blue),
+                    ),
+                  ),
+                ),
+
+              // 🔥 HERO BANNER
+              if (!isLoading && events.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _heroBanner(events.first),
+                  ),
+                ),
+
+              // 🔥 SECTION TITLE
+              if (!isLoading || events.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
                         const Text(
-                          'Temukan Event',
+                          'Event Populer',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
-                      ],
-                    ),
-                    // 🔐 AUTH BUTTON
-                    user == null ? _buildLoginButton() : _buildUserAvatar(auth),
-                  ],
-                ),
-              ),
-            ),
-
-            // 🔥 LOGIN CTA (JIKA BELUM LOGIN)
-            if (user == null)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF1E3A5F), Color(0xFF0D1B2A)],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
+                        Text(
+                          'Lihat Semua',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue.shade400,
                           ),
-                          child: const Icon(
-                            Icons.confirmation_number,
-                            color: Colors.blue,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Masuk untuk beli tiket',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Nikmati pengalaman pemesanan terbaik',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => _navigateTo(const LoginPage()),
-                          child: const Text('Masuk'),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
 
-            // 🔥 HERO BANNER
-            if (events.isNotEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _heroBanner(events.first),
+              // 🔥 HORIZONTAL LIST
+              if (!isLoading)
+                SliverToBoxAdapter(
+                  child: events.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(40),
+                          child: Center(
+                            child: Text(
+                              'Belum ada event tersedia',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        )
+                      : SizedBox(
+                          height: 220,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: events.length,
+                            itemBuilder: (context, index) {
+                              final event = events[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: _eventCard(context, event),
+                              );
+                            },
+                          ),
+                        ),
                 ),
-              ),
 
-            // 🔥 SECTION TITLE
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Event Populer',
+              // 🔥 RECOMMENDED SECTION
+              if (!isLoading && events.isNotEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
+                    child: Text(
+                      'Rekomendasi Untukmu',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    Text(
-                      'Lihat Semua',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue.shade400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // 🔥 HORIZONTAL LIST
-            SliverToBoxAdapter(
-              child: events.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.all(40),
-                      child: Center(
-                        child: Text(
-                          'Belum ada event tersedia',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                    )
-                  : SizedBox(
-                      height: 220,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        scrollDirection: Axis.horizontal,
-                        itemCount: events.length,
-                        itemBuilder: (context, index) {
-                          final event = events[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: _eventCard(context, event),
-                          );
-                        },
-                      ),
-                    ),
-            ),
-
-            // 🔥 RECOMMENDED SECTION
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
-                child: Text(
-                  'Rekomendasi Untukmu',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
                   ),
                 ),
-              ),
-            ),
 
-            // 🔥 VERTICAL LIST
-            SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                if (index >= events.length) return null;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 4,
-                  ),
-                  child: _listTile(context, events[index]),
-                );
-              }, childCount: events.length),
-            ),
+              // 🔥 VERTICAL LIST
+              if (!isLoading && events.isNotEmpty)
+                SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    if (index >= events.length) return null;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 4,
+                      ),
+                      child: _listTile(context, events[index]),
+                    );
+                  }, childCount: events.length),
+                ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 20)),
-          ],
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+            ],
+          ),
         ),
       ),
     );
@@ -250,6 +282,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildUserAvatar(AuthProvider auth) {
+    final userMap = auth.user;
+    final email = userMap != null ? userMap['email'] : 'User';
+
     return PopupMenuButton<String>(
       onSelected: (value) async {
         if (value == 'logout') {
@@ -272,7 +307,7 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  auth.user?.email ?? 'User',
+                  email,
                   style: const TextStyle(fontSize: 14),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -387,11 +422,25 @@ class _HomePageState extends State<HomePage> {
                 top: Radius.circular(16),
               ),
               child: event.image.isNotEmpty
-                  ? Image.network(
-                      event.image,
-                      height: 100,
+                  ? CachedNetworkImage(
+                      imageUrl: event.image,
                       width: double.infinity,
+                      height:
+                          100, // (Sesuaikan tingginya dengan komponen _eventCard atau _listTile kamu)
                       fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey[900],
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey[800],
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: Colors.grey,
+                        ),
+                      ),
                     )
                   : Container(
                       height: 100,

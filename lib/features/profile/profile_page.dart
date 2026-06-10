@@ -13,14 +13,12 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final user = auth.user;
+    final isLoggedIn = auth.isLoggedIn; // Menggunakan getter dari provider baru
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D0D),
       body: SafeArea(
-        child: user == null
-            ? _guestView(context)
-            : _loggedInView(context, auth),
+        child: !isLoggedIn ? _guestView(context) : _loggedInView(context, auth),
       ),
     );
   }
@@ -34,8 +32,8 @@ class ProfilePage extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1A1A1A),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -113,7 +111,13 @@ class ProfilePage extends StatelessWidget {
 
   // 🔐 VIEW JIKA SUDAH LOGIN
   Widget _loggedInView(BuildContext context, AuthProvider auth) {
-    final user = auth.user;
+    final user = auth.user; // Berbentuk Map<String, dynamic> sekarang
+
+    // Menentukan teks badge berdasarkan role dari Laravel
+    String roleName = 'Member';
+    if (auth.isAdmin) roleName = 'Admin';
+    if (auth.isOrganizer) roleName = 'Organizer';
+    if (auth.isChecker) roleName = 'Checker';
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -133,11 +137,7 @@ class ProfilePage extends StatelessWidget {
                   color: Colors.blue.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.person,
-                  size: 30,
-                  color: Colors.blue,
-                ),
+                child: const Icon(Icons.person, size: 30, color: Colors.blue),
               ),
 
               const SizedBox(width: 16),
@@ -147,14 +147,19 @@ class ProfilePage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      user?.email ?? 'User',
+                      user?['full_name'] ?? user?['username'] ?? 'User',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
+                    Text(
+                      user?['email'] ?? '',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -164,11 +169,12 @@ class ProfilePage extends StatelessWidget {
                         color: Colors.green.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        'Member',
-                        style: TextStyle(
+                      child: Text(
+                        roleName, // Dinamis mengikuti role akun
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Colors.green,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -240,9 +246,9 @@ class ProfilePage extends StatelessWidget {
 
               if (!context.mounted) return;
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Berhasil logout')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Berhasil logout')));
             },
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -283,12 +289,13 @@ class ProfilePage extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          size: 14,
+          color: Colors.grey,
+        ),
         onTap: onTap,
       ),
     );

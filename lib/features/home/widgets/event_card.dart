@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../event/event_detail_page.dart';
 import '../../../models/event_model.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -46,9 +47,25 @@ class EventCard extends StatelessWidget {
                 width: double.infinity,
                 color: Colors.grey[700],
                 child: event.image.isNotEmpty
-                    ? Image.network(
-                        event.image,
+                    ? CachedNetworkImage(
+                        imageUrl: event.image,
+                        width: double.infinity,
+                        height:
+                            100, // (Sesuaikan tingginya dengan komponen _eventCard atau _listTile kamu)
                         fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[900],
+                          child: const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[800],
+                          child: const Icon(
+                            Icons.broken_image,
+                            color: Colors.grey,
+                          ),
+                        ),
                       )
                     : const Icon(Icons.image, size: 40),
               ),
@@ -89,10 +106,7 @@ class EventCard extends StatelessWidget {
                     children: const [
                       Icon(Icons.location_on, size: 14),
                       SizedBox(width: 4),
-                      Text(
-                        'Jakarta',
-                        style: TextStyle(fontSize: 12),
-                      ),
+                      Text('Jakarta', style: TextStyle(fontSize: 12)),
                     ],
                   ),
                 ],
