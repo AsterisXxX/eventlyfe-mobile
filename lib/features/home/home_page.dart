@@ -5,9 +5,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/providers/event_provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/category_provider.dart';
+import '../../core/providers/navigation_provider.dart';
 import '../../core/utils/currency_formatter.dart';
 
-import 'widgets/category_list.dart';
+// import 'widgets/category_list.dart';
 import 'widgets/search_bar_widget.dart';
 import 'widgets/event_card.dart';
 
@@ -26,14 +27,19 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       context.read<EventProvider>().fetchEvents();
       context.read<CategoryProvider>().fetchCategories();
     });
   }
 
   Future<void> _onRefresh() async {
-    await context.read<EventProvider>().fetchEvents();
-    await context.read<CategoryProvider>().fetchCategories();
+    final eventProvider = context.read<EventProvider>();
+    final categoryProvider = context.read<CategoryProvider>();
+    await Future.wait([
+      eventProvider.fetchEvents(),
+      categoryProvider.fetchCategories(),
+    ]);
   }
 
   @override
@@ -41,7 +47,6 @@ class _HomePageState extends State<HomePage> {
     final eventProvider = context.watch<EventProvider>();
     final events = eventProvider.events;
     final isLoading = eventProvider.isLoading;
-
     final auth = context.watch<AuthProvider>();
     final isLoggedIn = auth.isLoggedIn;
 
@@ -77,9 +82,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               SliverToBoxAdapter(child: SearchBarWidget()),
-              SliverToBoxAdapter(child: CategoryList()),
-
-              // 🔥 LOADING INDICATOR
+              // SliverToBoxAdapter(child: CategoryList()),
               if (isLoading && events.isEmpty)
                 const SliverToBoxAdapter(
                   child: Padding(
@@ -91,8 +94,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-
-              // 🔥 4. SECTION TITLE: EVENT PILIHAN
               if (!isLoading || events.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
@@ -108,9 +109,17 @@ class _HomePageState extends State<HomePage> {
                             color: Colors.white,
                           ),
                         ),
-                        Text(
-                          'Lihat Semua',
-                          style: TextStyle(fontSize: 12, color: Colors.white70),
+                        GestureDetector(
+                          onTap: () {
+                            context.read<NavigationProvider>().setIndex(1);
+                          },
+                          child: const Text(
+                            'Lihat Semua',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF1877F2),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -157,8 +166,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-
-              // 🔥 7. VERTICAL LIST
               if (!isLoading && events.isNotEmpty)
                 SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
@@ -172,7 +179,6 @@ class _HomePageState extends State<HomePage> {
                     );
                   }, childCount: events.length),
                 ),
-
               const SliverToBoxAdapter(child: SizedBox(height: 30)),
             ],
           ),
@@ -181,7 +187,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 🔹 AUTH BUTTONS
   Widget _buildLoginButton() {
     return OutlinedButton(
       style: OutlinedButton.styleFrom(
@@ -253,7 +258,6 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
-  // 🔹 LIST TILE VERTIKAL
   Widget _listTile(BuildContext context, event) {
     return GestureDetector(
       onTap: () => _navigateTo(EventDetailPage(event: event)),
@@ -262,7 +266,7 @@ class _HomePageState extends State<HomePage> {
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [

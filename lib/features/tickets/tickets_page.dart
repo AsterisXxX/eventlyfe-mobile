@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/providers/ticket_provider.dart';
+import '../../core/providers/auth_provider.dart'; // 🔥 Tambahkan import ini
 import '../../core/utils/currency_formatter.dart';
+
+import '../auth/login_page.dart'; // 🔥 Tambahkan import ini
 import 'ticket_detail_page.dart';
 
 class TicketsPage extends StatefulWidget {
@@ -16,15 +19,39 @@ class _TicketsPageState extends State<TicketsPage> {
   @override
   void initState() {
     super.initState();
-
-    // 🔥 tetap sama (realtime)
     Future.microtask(() {
-      context.read<TicketProvider>().listenTickets();
+      if (!mounted) return;
+      // 🔥 Hanya panggil API tiket JIKA user sudah login
+      final isLoggedIn = context.read<AuthProvider>().isLoggedIn;
+      if (isLoggedIn) {
+        context.read<TicketProvider>().listenTickets();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 Pantau status login
+    final auth = context.watch<AuthProvider>();
+    final isLoggedIn = auth.isLoggedIn;
+
+    // Jika belum login, tampilkan layar ajakan login
+    if (!isLoggedIn) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0D0D0D),
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              Expanded(child: _unauthenticatedState(context)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Jika sudah login, jalankan logika tiket seperti biasa
     final tickets = context.watch<TicketProvider>().tickets;
 
     return Scaffold(
@@ -33,18 +60,7 @@ class _TicketsPageState extends State<TicketsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔥 HEADER
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, 16),
-              child: Text(
-                'Tiket Saya',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+            _buildHeader(),
 
             // 📋 CONTENT
             Expanded(
@@ -68,6 +84,95 @@ class _TicketsPageState extends State<TicketsPage> {
     );
   }
 
+  // Pisahkan Header agar kodingan lebih rapi dan bisa dipakai berulang
+  Widget _buildHeader() {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 16),
+      child: Text(
+        'Tiket Saya',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  // 🔥 TAMPILAN JIKA BELUM LOGIN
+  // 🔥 TAMPILAN JIKA BELUM LOGIN (UX Friendly)
+  Widget _unauthenticatedState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Ikon dibuat lebih soft menggunakan warna tema
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons
+                  .local_activity_outlined, // Menggunakan ikon tiket alih-alih gembok
+              size: 50,
+              color: Colors.blue,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Yuk, Masuk Dulu! 👋',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Penjelasan benefit (kenapa harus login)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'Masuk atau daftar sekarang buat lihat dan simpan semua tiket event favoritmu di sini.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey, fontSize: 14, height: 1.5),
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1877F2), // Warna biru tema web
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+              ).then((_) {
+                if (context.read<AuthProvider>().isLoggedIn && mounted) {
+                  context.read<TicketProvider>().listenTickets();
+                }
+              });
+            },
+            child: const Text(
+              'Masuk ke Akun',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _emptyState() {
     return Center(
       child: Column(
@@ -75,8 +180,8 @@ class _TicketsPageState extends State<TicketsPage> {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1A1A1A),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -104,7 +209,6 @@ class _TicketsPageState extends State<TicketsPage> {
     );
   }
 
-  // 🔥 CARD TIKET MODERN
   Widget _ticketCard(BuildContext context, ticket) {
     final isUsed = ticket.checkedIn;
 
@@ -112,9 +216,7 @@ class _TicketsPageState extends State<TicketsPage> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => TicketDetailPage(ticket: ticket),
-          ),
+          MaterialPageRoute(builder: (_) => TicketDetailPage(ticket: ticket)),
         );
       },
       child: Container(
@@ -122,7 +224,7 @@ class _TicketsPageState extends State<TicketsPage> {
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isUsed ? Colors.grey : Colors.blue.withOpacity(0.3),
+            color: isUsed ? Colors.grey : Colors.blue.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -138,8 +240,8 @@ class _TicketsPageState extends State<TicketsPage> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: isUsed
-                          ? Colors.grey.withOpacity(0.2)
-                          : Colors.blue.withOpacity(0.2),
+                          ? Colors.grey.withValues(alpha: 0.2)
+                          : Colors.blue.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -165,9 +267,7 @@ class _TicketsPageState extends State<TicketsPage> {
                             color: Colors.white,
                           ),
                         ),
-
                         const SizedBox(height: 4),
-
                         Text(
                           'Jumlah: ${ticket.quantity} tiket',
                           style: const TextStyle(
@@ -187,8 +287,8 @@ class _TicketsPageState extends State<TicketsPage> {
                     ),
                     decoration: BoxDecoration(
                       color: isUsed
-                          ? Colors.red.withOpacity(0.2)
-                          : Colors.green.withOpacity(0.2),
+                          ? Colors.red.withValues(alpha: 0.2)
+                          : Colors.green.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -233,10 +333,7 @@ class _TicketsPageState extends State<TicketsPage> {
                     children: [
                       const Text(
                         'Total Pembayaran',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 11, color: Colors.grey),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -257,7 +354,7 @@ class _TicketsPageState extends State<TicketsPage> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.2),
+                      color: Colors.blue.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Row(

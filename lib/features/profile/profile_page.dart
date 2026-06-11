@@ -13,7 +13,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final isLoggedIn = auth.isLoggedIn; // Menggunakan getter dari provider baru
+    final isLoggedIn = auth.isLoggedIn;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D0D),
@@ -109,7 +109,6 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // 🔐 VIEW JIKA SUDAH LOGIN
   Widget _loggedInView(BuildContext context, AuthProvider auth) {
     final user = auth.user; // Berbentuk Map<String, dynamic> sekarang
 
@@ -122,7 +121,6 @@ class ProfilePage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        // 🔥 HEADER PROFILE
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(

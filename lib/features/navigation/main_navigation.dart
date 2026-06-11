@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../core/providers/navigation_provider.dart';
+
 import '../home/home_page.dart';
 import '../tickets/tickets_page.dart';
 import '../profile/profile_page.dart';
 import '../explore/explore_page.dart';
 
-class MainNavigation extends StatefulWidget {
+class MainNavigation extends StatelessWidget {
   const MainNavigation({super.key});
-
-  @override
-  State<MainNavigation> createState() => _MainNavigationState();
-}
-
-class _MainNavigationState extends State<MainNavigation> {
-  int currentIndex = 0;
 
   final List<Widget> pages = const [
     HomePage(),
@@ -23,18 +20,18 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    final navProvider = context.watch<NavigationProvider>();
+    final currentIndex = navProvider.currentIndex;
+
     return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: pages,
-      ),
+      body: IndexedStack(index: currentIndex, children: pages),
 
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A1A),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -46,10 +43,38 @@ class _MainNavigationState extends State<MainNavigation> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _navItem(0, Icons.home_outlined, Icons.home, 'Home'),
-                _navItem(1, Icons.explore_outlined, Icons.explore, 'Explore'),
-                _navItem(2, Icons.confirmation_number_outlined, Icons.confirmation_number, 'Tiket'),
-                _navItem(3, Icons.person_outline, Icons.person, 'Profile'),
+                _navItem(
+                  context,
+                  currentIndex,
+                  0,
+                  Icons.home_outlined,
+                  Icons.home,
+                  'Home',
+                ),
+                _navItem(
+                  context,
+                  currentIndex,
+                  1,
+                  Icons.explore_outlined,
+                  Icons.explore,
+                  'Explore',
+                ),
+                _navItem(
+                  context,
+                  currentIndex,
+                  2,
+                  Icons.confirmation_number_outlined,
+                  Icons.confirmation_number,
+                  'Tiket',
+                ),
+                _navItem(
+                  context,
+                  currentIndex,
+                  3,
+                  Icons.person_outline,
+                  Icons.person,
+                  'Profile',
+                ),
               ],
             ),
           ),
@@ -58,19 +83,26 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 
-  Widget _navItem(int index, IconData icon, IconData activeIcon, String label) {
+  Widget _navItem(
+    BuildContext context,
+    int currentIndex,
+    int index,
+    IconData icon,
+    IconData activeIcon,
+    String label,
+  ) {
     final isSelected = currentIndex == index;
-    
+
     return GestureDetector(
       onTap: () {
-        setState(() {
-          currentIndex = index;
-        });
+        context.read<NavigationProvider>().setIndex(index);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withOpacity(0.2) : Colors.transparent,
+          color: isSelected
+              ? Colors.blue.withValues(alpha: 0.2)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(

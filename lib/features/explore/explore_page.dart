@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/providers/event_provider.dart';
+import '../../core/providers/navigation_provider.dart';
 import '../../models/event_model.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../event/event_detail_page.dart';
@@ -14,12 +16,24 @@ class ExplorePage extends StatefulWidget {
 }
 
 class _ExplorePageState extends State<ExplorePage> {
-  String searchQuery = '';
+  late TextEditingController _searchController;
   String selectedFilter = 'default';
 
-  List<Event> applyFilter(List<Event> events) {
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Event> applyFilter(List<Event> events, String query) {
     List<Event> filtered = events
-        .where((e) => e.title.toLowerCase().contains(searchQuery.toLowerCase()))
+        .where((e) => e.title.toLowerCase().contains(query.toLowerCase()))
         .toList();
 
     if (selectedFilter == 'low') {
@@ -34,7 +48,19 @@ class _ExplorePageState extends State<ExplorePage> {
   @override
   Widget build(BuildContext context) {
     final events = context.watch<EventProvider>().events;
-    final filteredEvents = applyFilter(events);
+
+    // 🔥 Pantau kata kunci dari NavigationProvider secara realtime
+    final globalQuery = context.watch<NavigationProvider>().searchQuery;
+
+    // Sinkronisasi isi TextField dengan Provider (agar update jika dikirim dari Home)
+    if (_searchController.text != globalQuery) {
+      _searchController.value = _searchController.value.copyWith(
+        text: globalQuery,
+        selection: TextSelection.collapsed(offset: globalQuery.length),
+      );
+    }
+
+    final filteredEvents = applyFilter(events, globalQuery);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D0D),
@@ -71,8 +97,10 @@ class _ExplorePageState extends State<ExplorePage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: TextField(
+                controller: _searchController,
                 onChanged: (value) {
-                  setState(() => searchQuery = value);
+                  // 🔥 Saat user ngetik di Explore, update ke Provider
+                  context.read<NavigationProvider>().updateQuery(value);
                 },
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
@@ -173,17 +201,32 @@ class _ExplorePageState extends State<ExplorePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🖼️ IMAGE
+            // 🖼️ IMAGE dengan CachedNetworkImage
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
               child: event.image.isNotEmpty
-                  ? Image.network(
-                      event.image,
+                  ? CachedNetworkImage(
+                      imageUrl: event.image,
                       height: 100,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        height: 100,
+                        color: Colors.grey[900],
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        height: 100,
+                        color: Colors.grey[800],
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: Colors.grey,
+                        ),
+                      ),
                     )
                   : Container(
                       height: 100,
@@ -204,11 +247,10 @@ class _ExplorePageState extends State<ExplorePage> {
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
+                      color: Colors.white,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   Text(
                     CurrencyFormatter.format(event.price),
                     style: const TextStyle(

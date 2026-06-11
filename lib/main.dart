@@ -8,6 +8,7 @@ import 'core/providers/auth_provider.dart';
 import 'core/providers/ticket_provider.dart';
 import 'core/providers/event_provider.dart';
 import 'core/providers/category_provider.dart';
+import 'core/providers/navigation_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +21,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => TicketProvider()),
         ChangeNotifierProvider(create: (_) => EventProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
       ],
       child: const MyApp(),
     ),
